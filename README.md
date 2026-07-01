@@ -1,12 +1,12 @@
 ########## FPGA Microprocessor Design ##########
 
-Description: 
+Description: FPGA microprocessor design for Lab 5
 
 Dependencies: 
 
 Features: 
 
-Repository: 
+Repository: https://github.com/aarjac/Lab5_FPGA_Microprocessor
 
 Installing: 
 
@@ -14,10 +14,10 @@ How to Use:
 
 Todo:
 
-Contributors:
+Contributors: aarjac
 
 Contact:
 
 Suggestions:
 
-License: 
+License: MIT
