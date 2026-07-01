@@ -1,3 +1,5 @@
+
+
 //main module for testbench
 module lab5(input clk, reset, output logic [3:0] OPCODE,
 output logic [1:0] State,
