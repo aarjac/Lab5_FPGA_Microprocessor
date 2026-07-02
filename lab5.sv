@@ -42,8 +42,30 @@ Dreg #(M) D_RD (.clk(clk), .reset(reset), .D(IR[3:0]), .Q(RD));
 endmodule
 
 //register file
+//needs editing
 //16 8-bit DReg
-
+module RegFile(input reset, clk, input [3:0] OPCODE, RA, RB, RD, 
+input [1:0] current_state, input [7:0] RF_data_in,
+output logic [7:0] RF_data_out0, RF_data_out1);
+//16 registers, 8 bits each
+logic [7:0] RF [15:0];
+//states
+localparam IF = 2'b00, FD = 2'b01, EX = 2'b10, RWB = 2'b11;
+//OPCODE checks
+localparam CMPJ = 4'b1101, JMP = 4'b1110, HALT = 4'b1111;
+integer i;
+always_ff @(posedge clk or posedge reset) begin
+    if (reset) begin 
+        for(i = 0; i < 16; i++)
+            RF[i] <= 8'd0;
+    end
+    else if (current_state == RWB && OPCODE != HALT && OPCODE != CMPJ && OPCODE != JMP) begin
+        RF[RD] <= RF_data_in;
+    end
+end
+assign RF_data_out0 = RF[RA];
+assign RF_data_out1 = RF[RB];
+endmodule
 
 //controller
 
