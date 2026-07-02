@@ -12,6 +12,23 @@ always_ff @(posedge clk or posedge reset) begin
 end
 endmodule
 
+//4:1 MUX
+module MUX4to1 #(parameter N = 8)(input [(N-1):0] A, B, C, D,
+input [1:0] select,
+output logic [(N-1):0] Y);
+always_comb begin
+    //init
+    Y = {N{1'b0}};
+    case(select)
+    2'b00 : Y = A;
+    2'b01 : Y = B;
+    2'b10 : Y = C;
+    2'b11 : Y = D;
+    default : Y = {N{1'bx}};
+    endcase
+end
+endmodule
+
 //instruction memory (ROM)
 module ROM (input [7:0] PC, output logic [15:0] IR);
 //mem variables
@@ -56,18 +73,24 @@ localparam CMPJ = 4'b1101, JMP = 4'b1110, HALT = 4'b1111;
 integer i;
 always_ff @(posedge clk or posedge reset) begin
     if (reset) begin 
+        RF_data_out0 <= 8'd0;
+        RF_data_out1 <= 8'd0;
         for(i = 0; i < 16; i++)
             RF[i] <= 8'd0;
     end
-    else if (current_state == RWB && OPCODE != HALT && OPCODE != CMPJ && OPCODE != JMP) begin
-        RF[RD] <= RF_data_in;
+    else begin
+        RF_data_out0 <= RF[RA];
+        RF_data_out1 <= RF[RB];
+        if ((current_state == RWB) && 
+        ((OPCODE != CMPJ) || (OPCODE != JMP) || (OPCODE != HALT))) 
+            RF[RD] <= RF_data_in;
     end
 end
-assign RF_data_out0 = RF[RA];
-assign RF_data_out1 = RF[RB];
 endmodule
 
 //controller
+module ControlUnit ();
+endmodule
 
 //ALU
 
