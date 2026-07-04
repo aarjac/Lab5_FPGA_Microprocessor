@@ -1,13 +1,28 @@
+//multiply operation
+//multiply instantiation temp
+//multiply (.A(), .B(), .R(), .Cout(), .OF());
+module multiply (input signed [7:0] A, B, 
+output logic [7:0] R,
+output logic Cout, OF);
+logic [7:0] Rtemp;
+wire signerror;
+assign {Rtemp, R} = A * B;
+assign signerror = (A[7] ^ B[7]) ^ R[7];
+//check if it needs to be boolean OR or bitwise OR
+assign Cout = (Rtemp == 8'd0 | Rtemp == - 8'd1) ? 1'b0 : 1'b1;
+assign OF = signerror | Cout;
+endmodule
+
 //D register
 //instantiation temp of DReg 
-// Dreg #() D# (.clk(), .reset(), .D(), .Q());
-module DReg #(parameter N = 8)(input clk, reset,
+// Dreg #() D# (.clk(), .reset(), .enable(), .D(), .Q());
+module DReg #(parameter N = 8)(input clk, reset, enable,
 input [(N-1):0] D, 
 output logic [(N-1):0] Q);
 always_ff @(posedge clk or posedge reset) begin
     if (reset)
         Q <= {N{1'b0}};
-    else 
+    else if (enable) 
         Q <= D;
 end
 endmodule
@@ -51,13 +66,17 @@ module InstructionReg #(parameter N = 16, M = 4)(input clk, reset,
 input [(N-1):0] IR,
 output logic [(M-1):0] OPCODE, RA, RB, RD);
 //OPCODE DReg
-Dreg #(M) D_OPCODE (.clk(clk), .reset(reset), .D(IR[15:12]), .Q(OPCODE));
+Dreg #(M) D_OPCODE (.clk(clk), .reset(reset), .enable(1'b1), .D(IR[15:12]), 
+.Q(OPCODE));
 //RA DReg
-Dreg #(M) D_RA (.clk(clk), .reset(reset), .D(IR[11:8]), .Q(RA));
+Dreg #(M) D_RA (.clk(clk), .reset(reset), .enable(1'b1), .D(IR[11:8]), 
+.Q(RA));
 //RB DReg
-Dreg #(M) D_RB (.clk(clk), .reset(reset), .D(IR[7:4]), .Q(RB));
+Dreg #(M) D_RB (.clk(clk), .reset(reset), .enable(1'b1), .D(IR[7:4]), 
+.Q(RB));
 //RD DReg
-Dreg #(M) D_RD (.clk(clk), .reset(reset), .D(IR[3:0]), .Q(RD));
+Dreg #(M) D_RD (.clk(clk), .reset(reset), .enable(1'b1), .D(IR[3:0]), 
+.Q(RD));
 endmodule
 
 //register file
@@ -97,14 +116,13 @@ module ControlUnit (input clk, reset, input [3:0] OPCODE, RA, RB, RD,
 input [7:0] PC,
 output logic [1:0] state, 
 output logic [3:0] ALU_control,
-output logic MEM_write);
+output logic MEM_write, next_PC);
 //states
 localparam IF = 2'b00, FD = 2'b01, EX = 2'b10, RWB = 2'b11;
 //OPCODE checks
 localparam CMPJ = 4'b1101, JMP = 4'b1110, HALT = 4'b1111;
 //local variables
 logic [1:0] next_state;
-logic [7:0] next_PC;
 Dreg #(2) D1 (.clk(clk), .reset(reset), .D(next_state), 
 .Q(state));
 MUX4to1 #(2) MUX1 (.A(FD), .B(EX), .C(RWB), .D(IF), .select(state), 
@@ -139,10 +157,105 @@ end
 endmodule
 
 //ALU
+//operates combinatorially
+//non-arithmetic operations Cout = 1'b0, OF = 1'b0
+module ALU (input [3:0] RA, RB, input [7:0] A, B,
+input [3:0] ALU_control,
+output logic [7:0] ALU_out, 
+output logic Cout, OF);
+//operations
+localparam LDI = 4'b0001, ADD = 4'b0010, SUB = 4'b0011, ADI = 4'b0100,
+MUL = 4'b0101, DIV = 4'b0110, DEC = 4'b0111, INC = 4'b1000, 
+NOR = 4'b1001, NAND = 4'b1010, XOR = 4'b1011, COMP = 4'b1100,
+CMPJ = 4'b1101, JMP = 4'b1110, HALT = 4'b1111;
+//local variables
+logic Cout_multi, OF_multi;
+logic [7:0] AB_product;
+//multiply module
+multiply MULTI1(.A(A), .B(B), 
+.R(AB_product), .Cout(Cout_multi), .OF(OF_multi));
+always_comb begin
+    //init values
+    ALU_out = 7'd0; Cout = 1'b0; OF = 1'b0;
+    case (ALU_control)
+        LDI : begin
+            ALU_out = {RA, RB}; Cout = 1'b0; OF = 1'b0;
+        end
+        ADD : begin
+            {Cout,ALU_out} = {A[7], A} + {B[7], B};
+            OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
+        end
+        SUB : begin
+            {Cout,ALU_out} = {A[7], A} + {B[7], B};
+            OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
+        end
+        ADI : begin
+            //should never be Cout or OF
+            ALU_out =  A + {4'b0000, RB}; 
+            Cout = 1'b0; OF = 1'b0;
+        end
+        MUL : begin //check to make sure this one works
+            ALU_out = AB_product;
+            Cout = Cout_multi; OF = OF_multi;
+        end
+        DIV : begin //never OF during div
+            {Cout, ALU_out} = {A[7], A} / {B[7], B};
+            OF = 1'b0;
+        end
+        DEC : begin //check if OF is correct here
+            ALU_out = B - 8'd1;
+            OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
+        end
+        INC : begin //check if OF is correct ehre
+            ALU_out = B + 8'd1;
+            OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
+        end
+        NOR : begin //non-arthmetic Cout and OF both ZERO
+            ALU_out = ~(A || B);
+            Cout = 1'b0; OF = 1'b0;
+        end
+        NAND : begin
+            ALU_out = ~(A && B);
+            Cout = 1'b0; OF = 1'b0;
+        end
+        XOR : begin
+            ALU_out = A ^ B;
+            Cout = 1'b0; OF = 1'b0;
+        end
+        COMP : begin
+            ALU_out = ~B;
+            Cout = 1'b0; OF = 1'b0;
+        end
+        //think nothing goes here
+        CMPJ : ;
+        //think nothing goes here
+        HALT : ;
+        default : begin 
+            ALU_out = 7'd0; Cout = 1'b0; OF = 1'b0;
+        end
+    endcase
+end
+endmodule
 
 //W register
+module WReg (input clk, reset, enable,
+input [7:0] data_in,
+output logic [7:0] data_out);
+Dreg #(8) D1 (.clk(clk), .reset(reset), .enable(enable), .D(data_in), 
+.Q(data_out));
+endmodule
 
 //program counter
+module PC (input clk, reset, enable,
+input [7:0] next_count,
+output logic [7:0] count);
+always_ff @(posedge clk or posedge reset) begin 
+    if (reset)
+        count <= 8'd0;
+    else if (enable)
+        count <= next_count;
+end
+endmodule
 
 //main module for testbench
 module lab5(input clk, reset, output logic [3:0] OPCODE,
