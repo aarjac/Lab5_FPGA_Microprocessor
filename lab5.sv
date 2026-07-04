@@ -156,7 +156,7 @@ always_comb begin
             end
             else if (OPCODE == JMP) 
                 next_PC = {RA,RB};
-            else if (OPCDOE == HALT)
+            else if (OPCODE == HALT)
                 next_PC = PC;
             else 
                 next_PC = PC + 8'd1; 
