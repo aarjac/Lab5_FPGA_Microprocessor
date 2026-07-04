@@ -289,6 +289,7 @@ ROM ROM1 (.PC(PC),
 .IR(IR));
 //Instruction Register
 //holds the current 16-bit instruction
+//decodes IR into OPCODE, RA, RB, and RD
 InstructionReg #(16, 4) IREG1 (.clk(clk), .reset(reset), 
 .IR(IR), 
 .OPCODE(OPCODE), .RA(RA), .RB(RB), .RD(RD));
@@ -316,6 +317,7 @@ ALU ALU1 (.RA(RA), .RB(RB), .A(A), .B(B), .ALU_control(ALU_control),
 //W Register
 WReg WR1 (.clk(clk), .reset(reset), .enable(MEM_Write), .data_in(ALU_out), 
 .data_out(data_out));
+assign W_Reg = data_out;
 endmodule
 
 //main module physical validation
