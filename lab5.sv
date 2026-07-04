@@ -47,6 +47,7 @@ end
 endmodule
 
 //instruction memory (ROM)
+//ROM ROM#(.PC(), .IR());
 module ROM (input [7:0] PC, output logic [15:0] IR);
 //mem variables
 logic [15:0] mem [20:0];
@@ -62,6 +63,7 @@ endmodule
 
 //instruction register
 //instantiate D register
+//InstructionReg #(16, 4) IREG1 (.clk(), .reset(), .IR(), .OPCODE(), .RA(), .RB(), .RD());
 module InstructionReg #(parameter N = 16, M = 4)(input clk, reset,
 input [(N-1):0] IR,
 output logic [(M-1):0] OPCODE, RA, RB, RD);
@@ -82,6 +84,7 @@ endmodule
 //register file
 //needs editing
 //16 8-bit DReg
+//RegFile RegF#(.reset(), .clk(), .OPCODE(), .RA(), .RB(), .RD(), .state(), .RF_data_in(), .RF_data_out0(), .RF_data_out1());
 module RegFile(input reset, clk, input [3:0] OPCODE, RA, RB, RD, 
 input [1:0] state, input [7:0] RF_data_in,
 output logic [7:0] RF_data_out0, RF_data_out1);
@@ -112,6 +115,7 @@ endmodule
 //controller
 //implemented via FSM using DReg and MUX4to1
 //might have to fix some things here
+//ControlUnit CU1 (.clk(), .reset(), .OPCODE(), .RA(), .RB(), .RD(), .PC(), .state(), .ALU_control), .MEM_write(), .next_PC());
 module ControlUnit (input clk, reset, input [3:0] OPCODE, RA, RB, RD,
 input [7:0] PC,
 output logic [1:0] state, 
@@ -159,6 +163,7 @@ endmodule
 //ALU
 //operates combinatorially
 //non-arithmetic operations Cout = 1'b0, OF = 1'b0
+//ALU ALU1 (.RA(), .RB(), .A(), .B(), .ALU_control(), .ALU_out(), .Cout(), .OF());
 module ALU (input [3:0] RA, RB, input [7:0] A, B,
 input [3:0] ALU_control,
 output logic [7:0] ALU_out, 
@@ -238,6 +243,7 @@ end
 endmodule
 
 //W register
+//WReg WR1 (.clk(), .reset(), .enable(), .data_in(), .data_out());
 module WReg (input clk, reset, enable,
 input [7:0] data_in,
 output logic [7:0] data_out);
@@ -246,22 +252,70 @@ Dreg #(8) D1 (.clk(clk), .reset(reset), .enable(enable), .D(data_in),
 endmodule
 
 //program counter
-module PC (input clk, reset, enable,
-input [7:0] next_count,
+//ProgramCounter PC1 (.clk(), .reset(), .enable(), .next_PC(), .count());
+module ProgramCounter (input clk, reset, enable,
+input [7:0] next_PC,
 output logic [7:0] count);
 always_ff @(posedge clk or posedge reset) begin 
     if (reset)
         count <= 8'd0;
     else if (enable)
-        count <= next_count;
+        count <= next_PC;
 end
 endmodule
 
 //main module for testbench
 module lab5(input clk, reset, output logic [3:0] OPCODE,
-output logic [1:0] State,
-output logic [7:0] PC, Alu_out, W_Reg,
+output logic [1:0] state,
+output logic [7:0] PC, ALU_out, W_Reg,
 output logic Cout, OF);
+//local constants
+//local variables
+logic MEM_write; //write enable for WReg
+logic [3:0] ALU_control; //OPCODE = ALU_control passed to ALU
+logic [3:0] RA, RB, RD;
+logic [7:0] A, B; //contents of RA and RB in RegFile
+logic [7:0] next_PC;
+logic [7:0] data_out; //value output from WReg
+logic [15:0] IR;
+//Program Counter
+//input next_PC to update the program count PC
+ProgramCounter PC1 (.clk(clk), .reset(reset), .enable(1'b1), 
+.next_PC(next_PC), 
+.count(PC));
+//Instruction Memory
+//input counter points to instruction address
+ROM ROM1 (.PC(PC), 
+.IR(IR));
+//Instruction Register
+//holds the current 16-bit instruction
+InstructionReg #(16, 4) IREG1 (.clk(clk), .reset(reset), 
+.IR(IR), 
+.OPCODE(OPCODE), .RA(RA), .RB(RB), .RD(RD));
+//Controller
+//Determines state
+//Passes OPCODE = ALU_control to ALU
+//Enables W Reg with MEM_write if in RWB
+//Determines next_PC based on state
+ControlUnit CU1 (.clk(clk), .reset(reset), .OPCODE(OPCODE), 
+.RA(RA), .RB(RB), .RD(RD), .PC(PC), 
+.state(state), .ALU_control(ALU_control), 
+.MEM_write(MEM_write), .next_PC(next_PC));
+//Register File
+//holds data_out value from W Reg in memoryn, stores at RF[RD]
+//accesses values at RF[RA] and RF[RB] and passes to ALU
+RegFile RegF1 (.reset(reset), .clk(clk), 
+.OPCODE(OPCODE), .RA(RA), .RB(RB), .RD(RD), .state(state), 
+.RF_data_in(data_out), 
+.RF_data_out0(A), .RF_data_out1(B));
+//ALU
+//operates on RA, RB, A, or B depending on OPCODE = ALU_control
+//output results to WReg
+ALU ALU1 (.RA(RA), .RB(RB), .A(A), .B(B), .ALU_control(ALU_control), 
+.ALU_out(ALU_out), .Cout(Cout), .OF(OF));
+//W Register
+WReg WR1 (.clk(clk), .reset(reset), .enable(MEM_Write), .data_in(ALU_out), 
+.data_out(data_out));
 endmodule
 
 //main module physical validation
