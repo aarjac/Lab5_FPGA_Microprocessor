@@ -8,13 +8,12 @@ logic [7:0] Rtemp;
 wire signerror;
 assign {Rtemp, R} = A * B;
 assign signerror = (A[7] ^ B[7]) ^ R[7];
-//check if it needs to be boolean OR or bitwise OR
 assign Cout = (Rtemp == 8'd0 | Rtemp == - 8'd1) ? 1'b0 : 1'b1;
 assign OF = signerror | Cout;
 endmodule
 
 //D register
-//instantiation temp of DReg 
+//DReg instantiation temp 
 // DReg #() D# (.clk(), .reset(), .enable(), .D(), .Q());
 module DReg #(parameter N = 8)(input clk, reset, enable,
 input [(N-1):0] D, 
@@ -28,7 +27,7 @@ end
 endmodule
 
 //4:1 MUX
-//instatiation temp of MUX 
+//MUX instantiation temp 
 // MUX4to1 #(#) MUX# (.A(), .B(), .C(), .D(), .select(), .Y());
 module MUX4to1 #(parameter N = 8)(input [(N-1):0] A, B, C, D,
 input [1:0] select,
@@ -47,6 +46,7 @@ end
 endmodule
 
 //instruction memory (ROM)
+//ROM instantiation temp 
 //ROM ROM#(.PC(), .IR());
 module ROM (input [7:0] PC, output logic [15:0] IR);
 //mem variables
@@ -62,7 +62,7 @@ assign IR = mem[PC];
 endmodule
 
 //instruction register
-//instantiate D register
+//IR instantiation temp 
 //InstructionReg #(16, 4) IREG1 (.clk(), .reset(), .IR(), .OPCODE(), .RA(), .RB(), .RD());
 module InstructionReg #(parameter N = 16, M = 4)(input clk, reset,
 input [(N-1):0] IR,
@@ -82,8 +82,7 @@ DReg #(M) D_RD (.clk(clk), .reset(reset), .enable(1'b1), .D(IR[3:0]),
 endmodule
 
 //register file
-//needs editing
-//16 8-bit DReg
+//RegFile instantiation temp 
 //RegFile RegF#(.reset(), .clk(), .OPCODE(), .RA(), .RB(), .RD(), .state(), .RF_data_in(), .RF_data_out0(), .RF_data_out1());
 module RegFile(input reset, clk, input [3:0] OPCODE, RA, RB, RD, 
 input [1:0] state, input [7:0] RF_data_in,
@@ -114,7 +113,7 @@ endmodule
 
 //controller
 //implemented via FSM using DReg and MUX4to1
-//might have to fix some things here
+//ControlUnit instantiation temp 
 //ControlUnit CU1 (.clk(), .reset(), .OPCODE(), .RA(), .RB(), .RD(), .A(), .B(), .PC(), .state(), .ALU_control), .MEM_write(), .next_PC());
 module ControlUnit (input clk, reset, input [3:0] OPCODE, RA, RB, RD,
 input [7:0] A, B, PC,
@@ -173,6 +172,7 @@ endmodule
 //ALU
 //operates combinatorially
 //non-arithmetic operations Cout = 1'b0, OF = 1'b0
+//ALU instantiation temp 
 //ALU ALU1 (.RA(), .RB(), .A(), .B(), .ALU_control(), .ALU_out(), .Cout(), .OF());
 module ALU (input [3:0] RA, RB, input [7:0] A, B,
 input [3:0] ALU_control,
@@ -205,27 +205,26 @@ always_comb begin
             OF = (A[7]^B[7]) & (A[7]^ALU_out[7]); 
         end
         ADI : begin
-            //should never be Cout or OF
             ALU_out =  A + {4'b0000, RB}; 
             Cout = 1'b0; OF = 1'b0;
         end
-        MUL : begin //check to make sure this one works
+        MUL : begin
             ALU_out = AB_product;
             Cout = Cout_multi; OF = OF_multi;
         end
-        DIV : begin //never OF during div
+        DIV : begin
             {Cout, ALU_out} = {A[7], A} / {B[7], B};
             OF = 1'b0;
         end
-        DEC : begin //check if OF is correct here
+        DEC : begin
             ALU_out = B - 8'd1;
-            OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
+            OF = (A[7]^B[7]) & (A[7]^ALU_out[7]); 
         end
-        INC : begin //check if OF is correct ehre
+        INC : begin
             ALU_out = B + 8'd1;
             OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
         end
-        NOR : begin //non-arthmetic Cout and OF both ZERO
+        NOR : begin
             ALU_out = ~(A | B);
             Cout = 1'b0; OF = 1'b0;
         end
@@ -241,10 +240,6 @@ always_comb begin
             ALU_out = ~B;
             Cout = 1'b0; OF = 1'b0;
         end
-        //think nothing goes here
-        CMPJ : ;
-        //think nothing goes here
-        HALT : ;
         default : begin 
             ALU_out = 7'd0; Cout = 1'b0; OF = 1'b0;
         end
@@ -253,6 +248,7 @@ end
 endmodule
 
 //W register
+//WReg instantiation temp 
 //WReg WR1 (.clk(), .reset(), .enable(), .data_in(), .data_out());
 module WReg (input clk, reset, enable,
 input [7:0] data_in,
@@ -262,6 +258,7 @@ DReg #(8) D1 (.clk(clk), .reset(reset), .enable(enable), .D(data_in),
 endmodule
 
 //program counter
+//PC instantiation temp 
 //ProgramCounter PC1 (.clk(), .reset(), .enable(), .next_PC(), .count());
 module ProgramCounter (input clk, reset, enable,
 input [7:0] next_PC,
