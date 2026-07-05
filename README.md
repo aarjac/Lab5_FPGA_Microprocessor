@@ -12,7 +12,7 @@ Installing:
 
 How to Use: 
 
-Todo:
+Todo: Fix the CMPJ if (RA >= RB), needs to be contents of RA and RB
 
 Contributors: aarjac
 
