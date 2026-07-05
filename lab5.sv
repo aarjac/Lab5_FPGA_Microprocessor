@@ -143,11 +143,12 @@ always_comb begin
         EX : begin
             ALU_control = OPCODE;
             next_PC = PC;
+            MEM_write = 1'b1;
         end
         RWB : begin
             //mabye change ALU_control value here
             ALU_control = OPCODE;
-            MEM_write = 1'b1;   
+            MEM_write = 1'b0;   
             if (OPCODE == CMPJ) begin
                 if (RA >= RB)
                     next_PC = PC + RD;
@@ -324,7 +325,7 @@ RegFile RegF1 (.reset(reset), .clk(clk),
 ALU ALU1 (.RA(RA), .RB(RB), .A(A), .B(B), .ALU_control(ALU_control), 
 .ALU_out(ALU_out), .Cout(Cout), .OF(OF));
 //W Register
-WReg WR1 (.clk(clk), .reset(reset), .enable(MEM_Write), .data_in(ALU_out), 
+WReg WR1 (.clk(clk), .reset(reset), .enable(MEM_write), .data_in(ALU_out), 
 .data_out(data_out));
 assign W_Reg = data_out;
 endmodule
