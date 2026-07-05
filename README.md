@@ -14,10 +14,9 @@ Installing:
 
 How to Use: 
 
-Todo: First 9 instructions passed
+Todo: 
 
-Fail on 9c1d instruction - 
-Forgot to do immediate instructions...
+Simulation Complete
 
 Contributors: aarjac
 
