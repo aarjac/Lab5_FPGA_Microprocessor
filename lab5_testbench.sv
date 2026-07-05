@@ -44,3 +44,25 @@ always_ff @(posedge clk) begin
     end
 end
 endmodule
+
+
+//my test for master clock
+//delete after test
+module master_clock_testbench();
+logic clk, reset, enable;
+logic clk_1000Hz;
+master_clock #(4, 3) MC1 (.clk(clk), .reset(reset), .enable(enable),
+.clk_1000Hz(clk_1000Hz));
+initial begin
+    clk = 1'b0;
+    forever #5 clk = ~clk;
+end
+initial begin
+    //init 
+    reset = 1'b1; #10; reset = 1'b0; enable = 1'b1; #5;
+    repeat (10) begin
+        #12;
+    end
+    $stop;
+end
+endmodule

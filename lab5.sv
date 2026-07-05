@@ -272,6 +272,8 @@ end
 endmodule
 
 //main module for testbench
+//lab5 instantiation temp
+//lab5 LAB1 (.clk(), .reset(), .OPCODE(), .state(), .PC(), .ALU_out, .W_Reg(), .Cout(), .OF() )
 module lab5(input clk, reset, output logic [3:0] OPCODE,
 output logic [1:0] state,
 output logic [7:0] PC, ALU_out, W_Reg,
@@ -327,8 +329,48 @@ WReg WR1 (.clk(clk), .reset(reset), .enable(MEM_write), .data_in(ALU_out),
 assign W_Reg = data_out;
 endmodule
 
+//Master clock from 50MHz to 1000Hz
+//master clock - sets master clock domain
+//sync reset
+module master_clock #(parameter frequency = (50000000/(1000*2)), N = 16)
+(input clk, reset, enable, 
+output logic clk_1000Hz);
+//local variables
+logic next_clock;
+logic [(N-1):0] next_count, count;
+//sync counter
+always_ff @(posedge clk) begin
+    if (reset) begin
+        count <= {N{1'b0}};
+        clk_1000Hz <= 1'b0;
+    end
+    else if (enable) begin
+        count <= next_count;
+        clk_1000Hz <= next_clock;
+    end
+end
+//comb logic to set 1Hz and 2Hz signal
+always_comb begin
+    //initialize values in comb block
+    next_clock = clk_1000Hz; 
+    next_count = count;   
+    if (count == (frequency-1)) begin
+        next_clock = ~clk_1000Hz;
+        next_count = {N{1'b0}};
+    end
+    else begin
+        next_count = count + {{(N-1){1'b0}}, 1'b1};
+    end
+end
+endmodule
+
 //main module physical validation
 module lab5_pv(input clk, SW0, SW1, KEY0, SW2, SW3, SW4,
 output logic [6:0] SevSeg5, SevSeg4, SevSeg3, SevSeg2, SevSeg1, SevSeg0,
 output logic LED0, LED1, LED2, LED3, LED4, LED5, LED6, LED7 );
+//freq divide 50MHz fpga clock to 1000Hz 
+master_clock MC1 (.clk(), .reset(), .enable(),
+.clk_1000Hz());
+lab5 LAB1 (.clk(clk), .reset(SW0), 
+.OPCODE(), .state(), .PC(), .ALU_out(), .W_Reg(), .Cout(), .OF() );
 endmodule
