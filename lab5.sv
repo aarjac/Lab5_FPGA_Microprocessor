@@ -115,9 +115,9 @@ endmodule
 //controller
 //implemented via FSM using DReg and MUX4to1
 //might have to fix some things here
-//ControlUnit CU1 (.clk(), .reset(), .OPCODE(), .RA(), .RB(), .RD(), .PC(), .state(), .ALU_control), .MEM_write(), .next_PC());
+//ControlUnit CU1 (.clk(), .reset(), .OPCODE(), .RA(), .RB(), .RD(), .A(), .B(), .PC(), .state(), .ALU_control), .MEM_write(), .next_PC());
 module ControlUnit (input clk, reset, input [3:0] OPCODE, RA, RB, RD,
-input [7:0] PC,
+input [7:0] A, B, PC,
 output logic [1:0] state, 
 output logic [3:0] ALU_control,
 output logic MEM_write, 
@@ -150,7 +150,7 @@ always_comb begin
             ALU_control = OPCODE;
             MEM_write = 1'b0;   
             if (OPCODE == CMPJ) begin
-                if (RA >= RB)
+                if (A >= B)
                     next_PC = PC + RD;
                 else
                     next_PC = PC + 8'd1;
@@ -309,7 +309,7 @@ InstructionReg #(16, 4) IREG1 (.clk(clk), .reset(reset),
 //Enables W Reg with MEM_write if in RWB
 //Determines next_PC based on state
 ControlUnit CU1 (.clk(clk), .reset(reset), .OPCODE(OPCODE), 
-.RA(RA), .RB(RB), .RD(RD), .PC(PC), 
+.RA(RA), .RB(RB), .RD(RD), .A(A), .B(B), .PC(PC), 
 .state(state), .ALU_control(ALU_control), 
 .MEM_write(MEM_write), .next_PC(next_PC));
 //Register File
