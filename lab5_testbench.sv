@@ -35,7 +35,7 @@ initial begin
     $fwrite(filelog, "PC, IR, OPCODE, RA, RB, RD, W_Reg, Cout, OF \n");
     //init processor
     reset = 1'b1; #10; reset = 1'b0; #10;
-    repeat (81) begin
+    repeat (82) begin
         #40;
     end
     $fclose(filelog);

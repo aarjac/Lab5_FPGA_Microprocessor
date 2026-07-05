@@ -151,7 +151,7 @@ always_comb begin
             MEM_write = 1'b0;   
             if (OPCODE == CMPJ) begin
                 if (A >= B)
-                    next_PC = PC + RD;
+                    next_PC = PC + {4'b0000,RD};
                 else
                     next_PC = PC + 8'd1;
             end
@@ -201,8 +201,8 @@ always_comb begin
             OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
         end
         SUB : begin
-            {Cout,ALU_out} = {A[7], A} + {B[7], B};
-            OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
+            {Cout,ALU_out} = {A[7], A} - {B[7], B};
+            OF = (A[7]^B[7]) & (A[7]^ALU_out[7]); 
         end
         ADI : begin
             //should never be Cout or OF
@@ -226,7 +226,7 @@ always_comb begin
             OF = ~(A[7]^B[7]) & (A[7]^ALU_out[7]); 
         end
         NOR : begin //non-arthmetic Cout and OF both ZERO
-            ALU_out = ~(A || B);
+            ALU_out = ~(A | B);
             Cout = 1'b0; OF = 1'b0;
         end
         NAND : begin

@@ -2,7 +2,9 @@
 
 Description: FPGA microprocessor design for Lab 5
 
-Dependencies: 
+Language : SystemVerilog
+
+Dependencies: N/A
 
 Features: 
 
@@ -12,11 +14,14 @@ Installing:
 
 How to Use: 
 
-Todo: Fix the CMPJ if (RA >= RB), needs to be contents of RA and RB
+Todo: First 9 instructions passed
+
+Fail on 9c1d instruction - 
+Forgot to do immediate instructions...
 
 Contributors: aarjac
 
-Contact:
+Contact: N/A
 
 Suggestions:
 
