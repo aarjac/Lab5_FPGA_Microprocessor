@@ -331,7 +331,6 @@ endmodule
 
 //Master clock from 50MHz to 1000Hz
 //master clock - sets master clock domain
-//sync reset
 module master_clock #(parameter frequency = (50000000/(1000*2)), N = 16)
 (input clk, reset, enable, 
 output logic clk_1000Hz);
@@ -339,7 +338,7 @@ output logic clk_1000Hz);
 logic next_clock;
 logic [(N-1):0] next_count, count;
 //sync counter
-always_ff @(posedge clk) begin
+always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
         count <= {N{1'b0}};
         clk_1000Hz <= 1'b0;
@@ -349,9 +348,8 @@ always_ff @(posedge clk) begin
         clk_1000Hz <= next_clock;
     end
 end
-//comb logic to set 1Hz and 2Hz signal
 always_comb begin
-    //initialize values in comb block
+    //init values
     next_clock = clk_1000Hz; 
     next_count = count;   
     if (count == (frequency-1)) begin
@@ -364,13 +362,318 @@ always_comb begin
 end
 endmodule
 
+//Hex display conversion
+module ASCII27Seg(input [7:0] AsciiCode, output logic [6:0] HexSeg);
+    always_comb begin 
+        HexSeg = 7'd0;  //initialization of variable HexSeg, turn all segments ON
+        case(AsciiCode)
+            //uppercase and lowercase letters
+            //A
+            8'h41 : HexSeg[3] = 1'b1;
+            //a
+            8'h61 : HexSeg[3] = 1'b1;
+            //B
+            8'h42 : begin 
+                HexSeg[0] = 1'b1; HexSeg[1] = 1'b1;
+            end
+            //b
+            8'h62 : begin 
+                HexSeg[0] = 1'b1; HexSeg[1] = 1'b1;
+            end
+            //C
+            8'h43 : begin
+                HexSeg[1] = 1'b1; HexSeg[2] = 1'b1; HexSeg[6] = 1'b1;
+            end
+            //c
+            8'h63 : begin
+                HexSeg[1] = 1'b1; HexSeg[2] = 1'b1; HexSeg[6] = 1'b1;
+            end
+            //D
+            8'h44 : begin
+                HexSeg [0] = 1'b1; HexSeg[5] = 1'b1;
+            end
+            //d
+            8'h64 : begin
+                HexSeg [0] = 1'b1; HexSeg[5] = 1'b1;
+            end
+            //E
+            8'h45 : begin
+                HexSeg [1] = 1'b1; HexSeg[2] = 1'b1;
+            end
+            //e
+            8'h65 : begin
+                HexSeg [1] = 1'b1; HexSeg[2] = 1'b1;
+            end
+            //F
+            8'h46 : begin
+                HexSeg [1] = 1'b1; HexSeg[2] = 1'b1; HexSeg[3] = 1'b1;
+            end
+            //f
+            8'h66 : begin
+                HexSeg [1] = 1'b1; HexSeg[2] = 1'b1; HexSeg[3] = 1'b1;
+            end
+            //G
+            8'h47 : begin
+                HexSeg [4] = 1'b1;
+            end
+            //g
+            8'h67 : begin
+                HexSeg [4] = 1'b1;
+            end
+            //H
+            8'h48 : begin
+                HexSeg [0] = 1'b1; HexSeg [3]= 1'b1;
+            end
+            //h
+            8'h68 : begin
+                HexSeg [0] = 1'b1; HexSeg [3]= 1'b1;
+            end
+            //I
+            8'h49 : begin
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [2] = 1'b1; HexSeg [3] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //i
+            8'h69 : begin
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [2] = 1'b1; HexSeg [3] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //J
+            8'h4A : begin
+                HexSeg [0] = 1'b1; HexSeg [5] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //j
+            8'h6A : begin
+                HexSeg [0] = 1'b1; HexSeg [5] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //K
+            8'h4B : begin
+                HexSeg [0] = 1'b1; HexSeg [3]= 1'b1;
+            end
+            //k
+            8'h6B : begin
+                HexSeg [0] = 1'b1; HexSeg [3]= 1'b1;
+            end
+            //L
+            8'h4C : begin 
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [2] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //l
+            8'h6C : begin 
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [2] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //M
+            8'h4D: begin 
+                HexSeg [1] = 1'b1; HexSeg [3] = 1'b1; HexSeg [5] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //m
+            8'h6D: begin 
+                HexSeg [1] = 1'b1; HexSeg [3] = 1'b1; HexSeg [5] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //N
+            8'h4E: begin 
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [3] = 1'b1; HexSeg [5] = 1'b1;
+            end
+            //n
+            8'h6E: begin 
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [3] = 1'b1; HexSeg [5] = 1'b1;
+            end
+            //O
+            8'h4F : begin 
+                HexSeg [6] = 1'b1;
+            end
+            //o
+            8'h6F : begin 
+                HexSeg [6] = 1'b1;
+            end
+            //P
+            8'h50 : begin 
+                HexSeg [2] = 1'b1; HexSeg [3] = 1'b1;
+            end
+                //p
+            8'h70 : begin 
+                HexSeg [2] = 1'b1; HexSeg [3] = 1'b1;
+            end
+            //Q
+            8'h51 : begin
+                HexSeg [3] = 1'b1; HexSeg [4] = 1'b1;
+            end
+            //q
+            8'h71 : begin
+                HexSeg [3] = 1'b1; HexSeg [4] = 1'b1;
+            end
+            //R
+            8'h52 : begin 
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [2] = 1'b1; HexSeg [3] = 1'b1; HexSeg [5] = 1'b1;
+            end
+            //r
+            8'h72 : begin 
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [2] = 1'b1; HexSeg [3] = 1'b1; HexSeg [5] = 1'b1;
+            end
+            //S
+            8'h53 : begin
+                HexSeg [1] = 1'b1; HexSeg [4] = 1'b1;
+            end
+            //s
+            8'h73 : begin
+                HexSeg [1] = 1'b1; HexSeg [4] = 1'b1;
+            end
+            //T
+            8'h54 : begin 
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [2] = 1'b1;
+            end
+            //t
+            8'h74 : begin 
+                HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [2] = 1'b1;
+            end
+            //U
+            8'h55 : begin 
+                HexSeg [0] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //u
+            8'h75 : begin 
+                HexSeg [0] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //V
+            8'h56 : begin 
+            HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [5] = 1'b1; HexSeg [6] = 1'b1;
+            end 
+            //V
+            8'h76 : begin 
+            HexSeg [0] = 1'b1; HexSeg [1] = 1'b1; HexSeg [5] = 1'b1; HexSeg [6] = 1'b1;
+            end 
+            //W
+            8'h57 : begin 
+                HexSeg [0] = 1'b1; HexSeg [2] = 1'b1; HexSeg [4] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //w
+            8'h77 : begin 
+                HexSeg [0] = 1'b1; HexSeg [2] = 1'b1; HexSeg [4] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //X
+            8'h58 : begin 
+                HexSeg [0] = 1'b1; HexSeg [3]= 1'b1;
+            end
+            //x
+            8'h78 : begin 
+                HexSeg [0] = 1'b1; HexSeg [3]= 1;
+            end
+            //Y
+            8'h59 : begin 
+                HexSeg [0] = 1'b1; HexSeg [4]= 1'b1;
+            end
+            //y
+            8'h79 : begin 
+                HexSeg [0] = 1'b1; HexSeg [4]= 1'b1;
+            end
+            //Z
+            8'h5A : begin 
+                HexSeg [2] = 1'b1; HexSeg [5]= 1'b1;
+            end
+            //z
+            8'h7A : begin 
+                HexSeg [2] = 1'b1; HexSeg [5]= 1'b1;
+            end
+            //numbers 0-9
+            //0
+            8'h30 : begin 
+                HexSeg [6] = 1'b1;
+            end
+            //1
+            8'h31 : begin 
+                HexSeg [0] = 1'b1; HexSeg [3] = 1'b1; HexSeg [4] = 1'b1; HexSeg [5] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //2
+            8'h32 : begin 
+                HexSeg [2] = 1'b1; HexSeg [5] = 1'b1;
+            end
+            //3
+            8'h33 : begin 
+                HexSeg [4] = 1'b1; HexSeg [5] = 1'b1;
+            end
+            //4
+            8'h34 : begin 
+                HexSeg [0] = 1'b1; HexSeg [3] = 1'b1; HexSeg [4] = 1'b1;
+            end
+            //5
+            8'h35 : begin 
+                HexSeg [1] = 1'b1; HexSeg [4] = 1'b1;
+            end    
+            //6
+            8'h36 : begin 
+                HexSeg [1] = 1'b1;
+            end
+            //7
+            8'h37 : begin 
+                HexSeg [3] = 1'b1; HexSeg [4] = 1'b1; HexSeg [5] = 1'b1; HexSeg [6] = 1'b1;
+            end
+            //8
+            8'h38 : begin 
+                //all segments ON
+            end
+            //9
+            8'h39 : begin 
+                HexSeg [4] = 1'b1;
+            end
+            default : HexSeg = 8'b11111111;  //defualt of variable HexSeg, all segments OFF
+        endcase
+    end 
+endmodule
+
+//7-seg display module
+module HexCodes(input [2:0] display_mode, input [7:0] last_name [5:0], input [7:0] PC, W_Reg, ALU_out, 
+input [3:0] OPCODE,
+output logic [6:0] HexSeg5 ,HexSeg4, HexSeg3, HexSeg2, HexSeg1, HexSeg0);
+//local variables
+logic [7:0] hrs_tens, hrs_ones, min_tens, min_ones, sec_tens, sec_ones;
+logic [7:0] Time [5:0];
+Bi27Seg SevH5(Time[5], HexSeg5);
+Bi27Seg SevH4(Time[4], HexSeg4);
+Bi27Seg SevH3(Time[3], HexSeg3);
+Bi27Seg SevH2(Time[2], HexSeg2);
+Bi27Seg SevH1(Time[1], HexSeg1);
+Bi27Seg SevH0(Time[0], HexSeg0);
+//sets hex display position
+always_comb begin   
+    Time[5] = hrs_tens;
+    Time[4] = hrs_ones;
+    Time[3] = min_tens;
+    Time[2] = min_ones;
+    Time[1] = sec_tens;
+    Time[0] = sec_ones;
+end 
+//gets time digits
+always_comb begin
+    hrs_tens = hrs / 8'd10;
+    hrs_ones = hrs % 8'd10;
+    min_tens = min / 8'd10;
+    min_ones = min % 8'd10;
+    sec_tens = sec / 8'd10;
+    sec_ones = sec % 8'd10;
+end
+endmodule
+
 //main module physical validation
+//need HEX display code
+//SW1 and KEY0 single-step mode
 module lab5_pv(input clk, SW0, SW1, KEY0, SW2, SW3, SW4,
 output logic [6:0] SevSeg5, SevSeg4, SevSeg3, SevSeg2, SevSeg1, SevSeg0,
 output logic LED0, LED1, LED2, LED3, LED4, LED5, LED6, LED7 );
+//local variables
+logic KEY0_clk;
+logic clk_1000Hz;
+logic main_clk;
+logic [2:0] display_mode;
+logic [7:0] PC;
 //freq divide 50MHz fpga clock to 1000Hz 
-master_clock MC1 (.clk(), .reset(), .enable(),
-.clk_1000Hz());
-lab5 LAB1 (.clk(clk), .reset(SW0), 
-.OPCODE(), .state(), .PC(), .ALU_out(), .W_Reg(), .Cout(), .OF() );
+master_clock MC1 (.clk(clk), .reset(SW0), .enable(),
+.clk_1000Hz(clk_1000Hz));
+//microprocessor module
+lab5 LAB1 (.clk(main_clk), .reset(SW0), 
+.OPCODE(), .state(), .PC(PC), .ALU_out(), .W_Reg(), .Cout(), .OF() );
+//for display mode
+always_comb begin
+end
+assign KEY0_clk = KEY0; //for single-step mode
+assign main_clk = (SW1) ? KEY0_clk : clk_1000Hz; //for single-step mode
+assign display_mode = {SW4, SW3, SW2}; 
+assign {LED7, LED6, LED5, LED4, LED3, LED2, LED1, LED0} = PC;  
 endmodule
