@@ -98,8 +98,10 @@ always_ff @(posedge clk or posedge reset) begin
     if (reset) begin 
         RF_data_out0 <= 8'd0;
         RF_data_out1 <= 8'd0;
-        for(i = 0; i < 16; i++)
-            RF[i] <= 8'd0;
+        RF[0] <= 8'd0; RF[1] <= 8'd0; RF[2] <= 8'd0; RF[3] <= 8'd0; RF[4] <= 8'd0;
+        RF[5] <= 8'd0; RF[6] <= 8'd0; RF[7] <= 8'd0; RF[8] <= 8'd0; RF[9] <= 8'd0;
+        RF[10] <= 8'd0; RF[11] <= 8'd0; RF[12] <= 8'd0; RF[13] <= 8'd0; RF[14] <= 8'd0;
+        RF[15] <= 8'd0;
     end
     else begin
         RF_data_out0 <= RF[RA];
@@ -613,42 +615,149 @@ module ASCII27Seg(input [7:0] AsciiCode, output logic [6:0] HexSeg);
             8'h39 : begin 
                 HexSeg [4] = 1'b1;
             end
-            default : HexSeg = 8'b11111111;  //defualt of variable HexSeg, all segments OFF
+            default : HexSeg = 7'b1111111;  //defualt of variable HexSeg, all segments OFF
         endcase
     end 
 endmodule
 
+//convert binary to ASCII
+module Bi2ASCII (input [7:0] binary, output logic [7:0] ASCII_one, ASCII_two);
+logic [3:0] MSB, LSB;
+always_comb begin
+    case (MSB)
+        4'b0000 : ASCII_two = 8'h30;
+        4'b0001 : ASCII_two = 8'h31;
+        4'b0010 : ASCII_two = 8'h32;
+        4'b0011 : ASCII_two = 8'h33;
+        4'b0100 : ASCII_two = 8'h34;
+        4'b0101 : ASCII_two = 8'h35;
+        4'b0110 : ASCII_two = 8'h36;
+        4'b0111 : ASCII_two = 8'h37;
+        4'b1000 : ASCII_two = 8'h38;
+        4'b1001 : ASCII_two = 8'h39;
+        4'b1010 : ASCII_two = 8'h41;
+        4'b1011 : ASCII_two = 8'h42;
+        4'b1100 : ASCII_two = 8'h43;
+        4'b1101 : ASCII_two = 8'h44;
+        4'b1110 : ASCII_two = 8'h45;
+        4'b1111 : ASCII_two = 8'h46;
+    endcase
+    case (LSB)
+        4'b0000 : ASCII_one = 8'h30;
+        4'b0001 : ASCII_one = 8'h31;
+        4'b0010 : ASCII_one = 8'h32;
+        4'b0011 : ASCII_one = 8'h33;
+        4'b0100 : ASCII_one = 8'h34;
+        4'b0101 : ASCII_one = 8'h35;
+        4'b0110 : ASCII_one = 8'h36;
+        4'b0111 : ASCII_one = 8'h37;
+        4'b1000 : ASCII_one = 8'h38;
+        4'b1001 : ASCII_one = 8'h39;
+        4'b1010 : ASCII_one = 8'h41;
+        4'b1011 : ASCII_one = 8'h42;
+        4'b1100 : ASCII_one = 8'h43;
+        4'b1101 : ASCII_one = 8'h44;
+        4'b1110 : ASCII_one = 8'h45;
+        4'b1111 : ASCII_one = 8'h46;
+    endcase
+end
+assign MSB = binary[7:4];
+assign LSB = binary[3:0];
+endmodule
+
 //7-seg display module
-module HexCodes(input [2:0] display_mode, input [7:0] last_name [5:0], input [7:0] PC, W_Reg, ALU_out, 
+//REMEMBER left justify names, right justify numbers
+module HexCodes(input [2:0] display_mode, input [7:0] PC, W_Reg, ALU_out, 
 input [3:0] OPCODE,
 output logic [6:0] HexSeg5 ,HexSeg4, HexSeg3, HexSeg2, HexSeg1, HexSeg0);
 //local variables
-logic [7:0] hrs_tens, hrs_ones, min_tens, min_ones, sec_tens, sec_ones;
-logic [7:0] Time [5:0];
-Bi27Seg SevH5(Time[5], HexSeg5);
-Bi27Seg SevH4(Time[4], HexSeg4);
-Bi27Seg SevH3(Time[3], HexSeg3);
-Bi27Seg SevH2(Time[2], HexSeg2);
-Bi27Seg SevH1(Time[1], HexSeg1);
-Bi27Seg SevH0(Time[0], HexSeg0);
+logic [7:0] PC_one, PC_two;
+logic [7:0] W_Reg_one, W_Reg_two;
+logic [7:0] ALU_out_one, ALU_out_two;
+logic [7:0] message [5:0];
+//module instantiation for binary to ASCII
+Bi2ASCII  B1(.binary(PC), .ASCII_one(PC_one), .ASCII_two(PC_two));
+Bi2ASCII  B2(.binary(W_Reg), .ASCII_one(W_Reg_one), .ASCII_two(W_Reg_two));
+Bi2ASCII  B3(.binary(ALU_out), .ASCII_one(ALU_out_one), .ASCII_two(ALU_out_two));
+//module instantiation for ASCII to 7-seg
+ASCII27Seg SevH5(.AsciiCode(message[5]), .HexSeg(HexSeg5));
+ASCII27Seg SevH4(.AsciiCode(message[4]), .HexSeg(HexSeg4));
+ASCII27Seg SevH3(.AsciiCode(message[3]), .HexSeg(HexSeg3));
+ASCII27Seg SevH2(.AsciiCode(message[2]), .HexSeg(HexSeg2));
+ASCII27Seg SevH1(.AsciiCode(message[1]), .HexSeg(HexSeg1));
+ASCII27Seg SevH0(.AsciiCode(message[0]), .HexSeg(HexSeg0));
 //sets hex display position
-always_comb begin   
-    Time[5] = hrs_tens;
-    Time[4] = hrs_ones;
-    Time[3] = min_tens;
-    Time[2] = min_ones;
-    Time[1] = sec_tens;
-    Time[0] = sec_ones;
-end 
-//gets time digits
 always_comb begin
-    hrs_tens = hrs / 8'd10;
-    hrs_ones = hrs % 8'd10;
-    min_tens = min / 8'd10;
-    min_ones = min % 8'd10;
-    sec_tens = sec / 8'd10;
-    sec_ones = sec % 8'd10;
-end
+    //init values
+    message[5] = 8'h00;
+    message[4] = 8'h00;
+    message[3] = 8'h00;
+    message[2] = 8'h00;
+    message[1] = 8'h00;
+    message[0] = 8'h00;
+    case (display_mode)
+        3'b000 : begin //display name
+            message[5] = 8'h41;
+            message[4] = 8'h46;
+            message[3] = 8'h46;
+            message[2] = 8'h45;
+            message[1] = 8'h4C;
+            message[0] = 8'h44;
+        end
+        3'b110 : begin //display PC
+            message[5] = 8'h00;
+            message[4] = 8'h00;
+            message[3] = 8'h00;
+            message[2] = 8'h00;
+            message[1] = PC_two;
+            message[0] = PC_one;
+        end
+        3'b101 : begin //display W_Reg
+            message[5] = 8'h00;
+            message[4] = 8'h00;
+            message[3] = 8'h00;
+            message[2] = 8'h00;
+            message[1] = W_Reg_two;
+            message[0] = W_Reg_one;
+        end
+        3'b011 : begin //display ALU_out
+            message[5] = 8'h00;
+            message[4] = 8'h00;
+            message[3] = 8'h00;
+            message[2] = 8'h00;
+            message[1] = ALU_out_two;
+            message[0] = ALU_out_one;
+        end
+        3'b111 : begin //display OPCODE
+            message[5] = 8'h00;
+            message[4] = 8'h00;
+            if (OPCODE[3] == 1'b0)
+                message[3] = 8'h30;
+            else 
+                message[3] = 8'h31;
+            if (OPCODE[2] == 1'b0)
+                message[2] = 8'h30;
+            else 
+                message[2] = 8'h31; 
+            if (OPCODE[1] == 1'b0)
+                message[1] = 8'h30;
+            else 
+                message[1] = 8'h31;
+            if (OPCODE[0] == 1'b0)
+                message[0] = 8'h30;
+            else 
+                message[0] = 8'h31;
+        end
+        default : begin
+            message[5] = 8'h00;
+            message[4] = 8'h00;
+            message[3] = 8'h00;
+            message[2] = 8'h00;
+            message[1] = 8'h00;
+            message[0] = 8'h00;
+        end
+    endcase   
+end 
 endmodule
 
 //main module physical validation
@@ -656,22 +765,26 @@ endmodule
 //SW1 and KEY0 single-step mode
 module lab5_pv(input clk, SW0, SW1, KEY0, SW2, SW3, SW4,
 output logic [6:0] SevSeg5, SevSeg4, SevSeg3, SevSeg2, SevSeg1, SevSeg0,
-output logic LED0, LED1, LED2, LED3, LED4, LED5, LED6, LED7 );
+output logic LED0, LED1, LED2, LED3, LED4, LED5, LED6, LED7);
 //local variables
 logic KEY0_clk;
 logic clk_1000Hz;
 logic main_clk;
+logic [1:0] state;
 logic [2:0] display_mode;
-logic [7:0] PC;
+logic [3:0] OPCODE;
+logic [7:0] PC, W_Reg, ALU_out;
+//7-seg display
+HexCodes HC1(.display_mode(display_mode), .PC(PC), .W_Reg(W_Reg), .ALU_out(ALU_out), 
+.OPCODE(OPCODE),
+.HexSeg5(SevSeg5), .HexSeg4(SevSeg4), .HexSeg3(SevSeg3), 
+.HexSeg2(SevSeg2), .HexSeg1(SevSeg1), .HexSeg0(SevSeg0));
 //freq divide 50MHz fpga clock to 1000Hz 
-master_clock MC1 (.clk(clk), .reset(SW0), .enable(),
+master_clock MC1 (.clk(clk), .reset(SW0), .enable(1'b1),
 .clk_1000Hz(clk_1000Hz));
 //microprocessor module
 lab5 LAB1 (.clk(main_clk), .reset(SW0), 
-.OPCODE(), .state(), .PC(PC), .ALU_out(), .W_Reg(), .Cout(), .OF() );
-//for display mode
-always_comb begin
-end
+.OPCODE(OPCODE), .state(state), .PC(PC), .ALU_out(ALU_out), .W_Reg(W_Reg), .Cout(), .OF() );
 assign KEY0_clk = KEY0; //for single-step mode
 assign main_clk = (SW1) ? KEY0_clk : clk_1000Hz; //for single-step mode
 assign display_mode = {SW4, SW3, SW2}; 

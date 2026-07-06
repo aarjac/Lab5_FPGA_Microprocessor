@@ -3,3 +3,9 @@ lab5.mpf
 transcript
 lab5.cr.mti
 lab5_filelogs/
+db/
+devkits/
+incremental_db/
+lab5_pv.qpf
+lab5_pv.qsf
+output_files/
