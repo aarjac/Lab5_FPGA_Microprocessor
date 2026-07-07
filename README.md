@@ -16,6 +16,8 @@ How to Use:
 
 Todo: 
 
+PIN assignment for Quartus
+
 Simulation Complete
 
 Contributors: aarjac

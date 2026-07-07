@@ -107,7 +107,7 @@ always_ff @(posedge clk or posedge reset) begin
         RF_data_out0 <= RF[RA];
         RF_data_out1 <= RF[RB];
         if ((state == RWB) && 
-        ((OPCODE != CMPJ) || (OPCODE != JMP) || (OPCODE != HALT))) 
+        ~((OPCODE == CMPJ) || (OPCODE == JMP) || (OPCODE == HALT))) 
             RF[RD] <= RF_data_in;
     end
 end
@@ -785,7 +785,7 @@ master_clock MC1 (.clk(clk), .reset(SW0), .enable(1'b1),
 //microprocessor module
 lab5 LAB1 (.clk(main_clk), .reset(SW0), 
 .OPCODE(OPCODE), .state(state), .PC(PC), .ALU_out(ALU_out), .W_Reg(W_Reg), .Cout(), .OF() );
-assign KEY0_clk = KEY0; //for single-step mode
+assign KEY0_clk = ~KEY0; //for single-step mode
 assign main_clk = (SW1) ? KEY0_clk : clk_1000Hz; //for single-step mode
 assign display_mode = {SW4, SW3, SW2}; 
 assign {LED7, LED6, LED5, LED4, LED3, LED2, LED1, LED0} = PC;  
